@@ -3,6 +3,7 @@ import requests
 from PIL import Image
 import pandas as pd
 import io
+import time
 
 st.title("Extraction de Tableaux depuis une Image")
 
@@ -14,8 +15,18 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Image téléversée", use_column_width=True)
 
+    # Barre de progression pour l'extraction du texte
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    # Simuler une progression (OCR.Space est généralement rapide, mais on ajoute une barre pour le confort utilisateur)
+    for i in range(1, 101, 10):
+        status_text.text(f"Extraction du texte en cours... {i}%")
+        progress_bar.progress(i)
+        time.sleep(0.1)  # Simuler un traitement
+
     # Utiliser OCR.Space pour extraire le texte
-    st.write("Extraction du texte en cours...")
+    status_text.text("Extraction du texte en cours...")
     api_url = "https://api.ocr.space/parse/image"
     payload = {
         'isOverlayRequired': False,
@@ -26,12 +37,25 @@ if uploaded_file is not None:
     response = requests.post(api_url, files=files, data=payload)
     result = response.json()
 
+    # Mettre à jour la barre de progression
+    progress_bar.progress(100)
+    status_text.text("Extraction terminée !")
+
     # Afficher le texte extrait
     text = result.get('ParsedResults', [{}])[0].get('ParsedText', '')
     st.subheader("Texte extrait :")
     st.text(text)
 
-    # Nettoyer et organiser les données (exemple basique)
+    # Barre de progression pour la structuration des données
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    for i in range(1, 101, 20):
+        status_text.text(f"Structuration des données en cours... {i}%")
+        progress_bar.progress(i)
+        time.sleep(0.1)  # Simuler un traitement
+
+    # Nettoyer et organiser les données
     lines = text.split('\n')
     data = []
     for line in lines:
@@ -40,6 +64,10 @@ if uploaded_file is not None:
 
     # Créer un DataFrame
     df = pd.DataFrame(data)
+
+    # Mettre à jour la barre de progression
+    progress_bar.progress(100)
+    status_text.text("Structuration terminée !")
 
     # Afficher le DataFrame
     st.subheader("Données structurées :")
