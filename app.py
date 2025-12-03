@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image, ImageDraw
 import io
-from utils.ocr_utils import extract_text_from_zone
+import requests
 from utils.data_utils import clean_and_structure_data
 from utils.excel_utils import export_to_excel
 
@@ -10,6 +10,26 @@ def draw_rectangle(image, x1, y1, x2, y2):
     draw = ImageDraw.Draw(image)
     draw.rectangle([x1, y1, x2, y2], outline="red", width=2)
     return image
+
+def extract_text_from_zone(cropped_image):
+    """Extraire le texte d'une zone spécifique d'une image."""
+    api_url = "https://api.ocr.space/parse/image"
+    payload = {
+        'isOverlayRequired': False,
+        'apikey': 'helloworld',  # Clé API gratuite pour les tests
+        'language': 'fra',
+    }
+
+    img_byte_arr = io.BytesIO()
+    cropped_image.save(img_byte_arr, format='PNG')
+    img_byte_arr = img_byte_arr.getvalue()
+
+    files = {'file': img_byte_arr}
+    response = requests.post(api_url, files=files, data=payload)
+    result = response.json()
+
+    text = result.get('ParsedResults', [{}])[0].get('ParsedText', '')
+    return text
 
 def main():
     st.title("Extraction de Tableaux avec Sélection des Zones")
