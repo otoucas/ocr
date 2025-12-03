@@ -1,12 +1,8 @@
 import streamlit as st
-import pytesseract
+import requests
 from PIL import Image
 import pandas as pd
 import io
-
-# Configuration de Tesseract (à adapter selon votre installation locale)
-# Exemple pour Windows :
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 st.title("Extraction de Tableaux depuis une Image")
 
@@ -18,11 +14,20 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Image téléversée", use_column_width=True)
 
-    # Extraire le texte
+    # Utiliser OCR.Space pour extraire le texte
     st.write("Extraction du texte en cours...")
-    text = pytesseract.image_to_string(image)
+    api_url = "https://api.ocr.space/parse/image"
+    payload = {
+        'isOverlayRequired': False,
+        'apikey': 'helloworld',  # Clé API gratuite pour les tests
+        'language': 'fra',
+    }
+    files = {'file': uploaded_file.read()}
+    response = requests.post(api_url, files=files, data=payload)
+    result = response.json()
 
     # Afficher le texte extrait
+    text = result.get('ParsedResults', [{}])[0].get('ParsedText', '')
     st.subheader("Texte extrait :")
     st.text(text)
 
