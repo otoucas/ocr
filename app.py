@@ -1,9 +1,15 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageDraw
 import io
 from utils.ocr_utils import extract_text_from_zone
 from utils.data_utils import clean_and_structure_data
 from utils.excel_utils import export_to_excel
+
+def draw_rectangle(image, x1, y1, x2, y2):
+    """Dessine un rectangle sur l'image pour visualiser la zone sélectionnée."""
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([x1, y1, x2, y2], outline="red", width=2)
+    return image
 
 def main():
     st.title("Extraction de Tableaux avec Sélection des Zones")
@@ -41,7 +47,6 @@ def main():
                 y1 = st.number_input(f"Y1 (coin supérieur gauche) pour l'image {i + 1}", min_value=0, max_value=image.height, value=0, key=f"y1_{i}")
                 x2 = st.number_input(f"X2 (coin inférieur droit) pour l'image {i + 1}", min_value=0, max_value=image.width, value=image.width, key=f"x2_{i}")
                 y2 = st.number_input(f"Y2 (coin inférieur droit) pour l'image {i + 1}", min_value=0, max_value=image.height, value=image.height, key=f"y2_{i}")
-                selected_zones.append((x1, y1, x2, y2))
 
             elif selection_mode == "Curseurs pour ajuster les zones":
                 st.subheader("Ajustez les curseurs pour sélectionner la zone à analyser")
@@ -49,7 +54,12 @@ def main():
                 y1 = st.slider(f"Y1 (coin supérieur gauche) pour l'image {i + 1}", 0, image.height, 0, key=f"slider_y1_{i}")
                 x2 = st.slider(f"X2 (coin inférieur droit) pour l'image {i + 1}", 0, image.width, image.width, key=f"slider_x2_{i}")
                 y2 = st.slider(f"Y2 (coin inférieur droit) pour l'image {i + 1}", 0, image.height, image.height, key=f"slider_y2_{i}")
-                selected_zones.append((x1, y1, x2, y2))
+
+            # Dessiner un rectangle sur l'image pour visualiser la zone sélectionnée
+            image_with_rect = draw_rectangle(image.copy(), x1, y1, x2, y2)
+            st.image(image_with_rect, caption=f"Zone sélectionnée pour l'image {i + 1}", use_column_width=True)
+
+            selected_zones.append((x1, y1, x2, y2))
 
         if validate_zones and selected_zones:
             # Barre de progression globale
