@@ -1,10 +1,12 @@
 import streamlit as st
-from utils.ocr_utils import extract_text_from_image, extract_text_from_zone
+from utils.ocr_utils import extract_text_from_zone
 from utils.data_utils import clean_and_structure_data
 from utils.excel_utils import export_to_excel
 from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 import io
+import os
+import tempfile
 
 def main():
     st.title("Extraction de Tableaux avec Sélection des Zones")
@@ -26,21 +28,29 @@ def main():
         for i, uploaded_file in enumerate(uploaded_files):
             st.subheader(f"Image {i + 1}")
 
-            # Afficher l'image avec le canvas pour dessiner les zones
+            # Afficher l'image
             image = Image.open(uploaded_file)
             st.image(image, caption=f"Image {i + 1}", use_column_width=True)
+
+            # Enregistrer temporairement l'image
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_file:
+                image.save(tmp_file, format="PNG")
+                tmp_file_path = tmp_file.name
 
             # Utiliser le canvas pour dessiner des rectangles
             canvas_result = st_canvas(
                 fill_color="rgba(255, 165, 0, 0.3)",
                 stroke_width=2,
                 stroke_color="orange",
-                background_image=image,
+                background_image=Image.open(tmp_file_path),
                 height=image.height,
                 width=image.width,
                 drawing_mode="rect",
                 key=f"canvas_{i}"
             )
+
+            # Supprimer le fichier temporaire
+            os.unlink(tmp_file_path)
 
             # Stocker les zones dessinées
             if canvas_result.json_data is not None:
