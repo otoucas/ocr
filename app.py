@@ -42,7 +42,7 @@ def main():
                 fill_color="rgba(255, 165, 0, 0.3)",
                 stroke_width=2,
                 stroke_color="orange",
-                background_image=Image.open(tmp_file_path),
+                background_image=tmp_file_path,  # Utiliser le chemin du fichier temporaire
                 height=image.height,
                 width=image.width,
                 drawing_mode="rect",
