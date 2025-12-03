@@ -19,6 +19,12 @@ def main():
         all_dataframes = []
         selected_zones = []
 
+        # Option pour choisir le mode de sélection des zones
+        selection_mode = st.radio(
+            "Choisissez le mode de sélection des zones :",
+            ("Saisie manuelle des coordonnées", "Curseurs pour ajuster les zones")
+        )
+
         # Bouton pour valider les zones sélectionnées
         validate_zones = st.button("Valider les zones sélectionnées")
 
@@ -29,14 +35,21 @@ def main():
             image = Image.open(uploaded_file)
             st.image(image, caption=f"Image {i + 1}", use_column_width=True)
 
-            # Saisie manuelle des coordonnées de la zone
-            st.subheader("Sélectionnez les coordonnées de la zone à analyser")
-            x1 = st.number_input(f"X1 (coin supérieur gauche) pour l'image {i + 1}", min_value=0, max_value=image.width, value=0, key=f"x1_{i}")
-            y1 = st.number_input(f"Y1 (coin supérieur gauche) pour l'image {i + 1}", min_value=0, max_value=image.height, value=0, key=f"y1_{i}")
-            x2 = st.number_input(f"X2 (coin inférieur droit) pour l'image {i + 1}", min_value=0, max_value=image.width, value=image.width, key=f"x2_{i}")
-            y2 = st.number_input(f"Y2 (coin inférieur droit) pour l'image {i + 1}", min_value=0, max_value=image.height, value=image.height, key=f"y2_{i}")
+            if selection_mode == "Saisie manuelle des coordonnées":
+                st.subheader("Saisissez les coordonnées de la zone à analyser")
+                x1 = st.number_input(f"X1 (coin supérieur gauche) pour l'image {i + 1}", min_value=0, max_value=image.width, value=0, key=f"x1_{i}")
+                y1 = st.number_input(f"Y1 (coin supérieur gauche) pour l'image {i + 1}", min_value=0, max_value=image.height, value=0, key=f"y1_{i}")
+                x2 = st.number_input(f"X2 (coin inférieur droit) pour l'image {i + 1}", min_value=0, max_value=image.width, value=image.width, key=f"x2_{i}")
+                y2 = st.number_input(f"Y2 (coin inférieur droit) pour l'image {i + 1}", min_value=0, max_value=image.height, value=image.height, key=f"y2_{i}")
+                selected_zones.append((x1, y1, x2, y2))
 
-            selected_zones.append((x1, y1, x2, y2))
+            elif selection_mode == "Curseurs pour ajuster les zones":
+                st.subheader("Ajustez les curseurs pour sélectionner la zone à analyser")
+                x1 = st.slider(f"X1 (coin supérieur gauche) pour l'image {i + 1}", 0, image.width, 0, key=f"slider_x1_{i}")
+                y1 = st.slider(f"Y1 (coin supérieur gauche) pour l'image {i + 1}", 0, image.height, 0, key=f"slider_y1_{i}")
+                x2 = st.slider(f"X2 (coin inférieur droit) pour l'image {i + 1}", 0, image.width, image.width, key=f"slider_x2_{i}")
+                y2 = st.slider(f"Y2 (coin inférieur droit) pour l'image {i + 1}", 0, image.height, image.height, key=f"slider_y2_{i}")
+                selected_zones.append((x1, y1, x2, y2))
 
         if validate_zones and selected_zones:
             # Barre de progression globale
