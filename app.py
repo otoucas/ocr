@@ -1,12 +1,20 @@
 import streamlit as st
+import cv2
+import numpy as np
+from PIL import Image
+import io
+import tempfile
+import os
 from utils.ocr_utils import extract_text_from_zone
 from utils.data_utils import clean_and_structure_data
 from utils.excel_utils import export_to_excel
-from streamlit_drawable_canvas import st_canvas
-from PIL import Image
-import io
-import os
-import tempfile
+
+def select_roi(image):
+    """Permet à l'utilisateur de sélectionner une région d'intérêt (ROI) sur l'image."""
+    img_array = np.array(image)
+    roi = cv2.selectROI("Select ROI", img_array, fromCenter=False, showCrosshair=True)
+    cv2.destroyAllWindows()
+    return roi
 
 def main():
     st.title("Extraction de Tableaux avec Sélection des Zones")
@@ -32,29 +40,13 @@ def main():
             image = Image.open(uploaded_file)
             st.image(image, caption=f"Image {i + 1}", use_column_width=True)
 
-            # Enregistrer temporairement l'image
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_file:
-                image.save(tmp_file, format="PNG")
-                tmp_file_path = tmp_file.name
+            # Convertir l'image PIL en tableau numpy pour OpenCV
+            img_array = np.array(image)
 
-            # Utiliser le canvas pour dessiner des rectangles
-            canvas_result = st_canvas(
-                fill_color="rgba(255, 165, 0, 0.3)",
-                stroke_width=2,
-                stroke_color="orange",
-                background_image=tmp_file_path,  # Utiliser le chemin du fichier temporaire
-                height=image.height,
-                width=image.width,
-                drawing_mode="rect",
-                key=f"canvas_{i}"
-            )
-
-            # Supprimer le fichier temporaire
-            os.unlink(tmp_file_path)
-
-            # Stocker les zones dessinées
-            if canvas_result.json_data is not None:
-                selected_zones.append(canvas_result.json_data["objects"])
+            # Permettre à l'utilisateur de sélectionner une zone
+            roi = select_roi(image)
+            if roi != (0, 0, 0, 0):
+                selected_zones.append(roi)
 
         if validate_zones and selected_zones:
             # Barre de progression globale
@@ -71,34 +63,31 @@ def main():
                 image = Image.open(uploaded_file)
 
                 # Extraire les zones sélectionnées
-                zones = selected_zones[i]
+                roi = selected_zones[i]
+                x1, y1, width, height = roi
+                x2, y2 = x1 + width, y1 + height
 
-                for zone in zones:
-                    # Coordonnées de la zone sélectionnée
-                    x1, y1 = zone["left"], zone["top"]
-                    x2, y2 = x1 + zone["width"], y1 + zone["height"]
+                # Rogner l'image selon la zone sélectionnée
+                cropped_image = image.crop((x1, y1, x2, y2))
 
-                    # Rogner l'image selon la zone sélectionnée
-                    cropped_image = image.crop((x1, y1, x2, y2))
+                # Afficher l'image rognée
+                st.image(cropped_image, caption=f"Zone sélectionnée {i + 1}", use_column_width=True)
 
-                    # Afficher l'image rognée
-                    st.image(cropped_image, caption=f"Zone sélectionnée {i + 1}", use_column_width=True)
+                # Extraire le texte de la zone sélectionnée
+                text = extract_text_from_zone(cropped_image)
 
-                    # Extraire le texte de la zone sélectionnée
-                    text = extract_text_from_zone(cropped_image)
+                # Afficher le texte extrait
+                st.subheader(f"Texte extrait de la zone {i + 1} :")
+                st.text(text)
 
-                    # Afficher le texte extrait
-                    st.subheader(f"Texte extrait de la zone {i + 1} :")
-                    st.text(text)
+                # Nettoyer et organiser les données
+                df = clean_and_structure_data(text)
 
-                    # Nettoyer et organiser les données
-                    df = clean_and_structure_data(text)
+                # Afficher le DataFrame
+                st.subheader(f"Données structurées de la zone {i + 1} :")
+                st.dataframe(df)
 
-                    # Afficher le DataFrame
-                    st.subheader(f"Données structurées de la zone {i + 1} :")
-                    st.dataframe(df)
-
-                    all_dataframes.append(df)
+                all_dataframes.append(df)
 
             # Exporter tous les DataFrames en un seul fichier Excel
             st.subheader("Exporter en Excel")
