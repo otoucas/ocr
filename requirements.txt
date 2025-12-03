@@ -1,3 +1,4 @@
+easyocr
 opencv-python
 openpyxl
 pandas
