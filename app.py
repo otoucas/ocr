@@ -15,32 +15,14 @@ uploaded_files = st.file_uploader(
 )
 
 if uploaded_files:
-    # Barre de progression globale
-    global_progress_bar = st.progress(0)
-    global_status_text = st.empty()
+    all_dataframes = []
 
-    all_dataframes = []  # Pour stocker les DataFrames de chaque image
-
-    # Traiter chaque image
     for i, uploaded_file in enumerate(uploaded_files):
-        # Mettre à jour la barre de progression globale
-        global_progress = int(((i + 1) / len(uploaded_files)) * 100)
-        global_progress_bar.progress(global_progress)
-        global_status_text.text(f"Traitement de l'image {i + 1}/{len(uploaded_files)}...")
+        st.subheader(f"Traitement de l'image {i + 1}")
 
         # Afficher l'image
         image = Image.open(uploaded_file)
         st.image(image, caption=f"Image {i + 1}", use_column_width=True)
-
-        # Barre de progression pour l'extraction du texte
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-
-        # Simuler une progression pour l'extraction
-        for progress in range(1, 101, 10):
-            status_text.text(f"Extraction du texte en cours... {progress}%")
-            progress_bar.progress(progress)
-            time.sleep(0.05)  # Simuler un traitement
 
         # Utiliser OCR.Space pour extraire le texte
         api_url = "https://api.ocr.space/parse/image"
@@ -53,42 +35,29 @@ if uploaded_files:
         response = requests.post(api_url, files=files, data=payload)
         result = response.json()
 
-        # Mettre à jour la barre de progression
-        progress_bar.progress(100)
-        status_text.text("Extraction terminée !")
-
-        # Afficher le texte extrait
+        # Afficher le texte brut extrait
         text = result.get('ParsedResults', [{}])[0].get('ParsedText', '')
-        st.subheader(f"Texte extrait de l'image {i + 1} :")
+        st.subheader(f"Texte brut extrait de l'image {i + 1} :")
         st.text(text)
-
-        # Barre de progression pour la structuration des données
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-
-        for progress in range(1, 101, 20):
-            status_text.text(f"Structuration des données en cours... {progress}%")
-            progress_bar.progress(progress)
-            time.sleep(0.05)  # Simuler un traitement
 
         # Nettoyer et organiser les données
         lines = text.split('\n')
         data = []
+
         for line in lines:
-            if line.strip():  # Ignorer les lignes vides
-                data.append(line.split())  # Diviser chaque ligne en colonnes
+            line = line.strip()
+            if line:
+                columns = [col.strip() for col in line.split('  ')]  # Utilisez un séparateur approprié
+                data.append(columns)
 
         # Créer un DataFrame
         df = pd.DataFrame(data)
-        all_dataframes.append(df)
-
-        # Mettre à jour la barre de progression
-        progress_bar.progress(100)
-        status_text.text("Structuration terminée !")
 
         # Afficher le DataFrame
         st.subheader(f"Données structurées de l'image {i + 1} :")
         st.dataframe(df)
+
+        all_dataframes.append(df)
 
     # Exporter tous les DataFrames en un seul fichier Excel
     st.subheader("Exporter en Excel")
@@ -105,7 +74,3 @@ if uploaded_files:
         file_name="tableaux_extraits.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
-    # Mettre à jour la barre de progression globale
-    global_progress_bar.progress(100)
-    global_status_text.text("Tous les fichiers ont été traités !")
