@@ -1,20 +1,9 @@
 import streamlit as st
-import cv2
-import numpy as np
 from PIL import Image
 import io
-import tempfile
-import os
 from utils.ocr_utils import extract_text_from_zone
 from utils.data_utils import clean_and_structure_data
 from utils.excel_utils import export_to_excel
-
-def select_roi(image):
-    """Permet à l'utilisateur de sélectionner une région d'intérêt (ROI) sur l'image."""
-    img_array = np.array(image)
-    roi = cv2.selectROI("Select ROI", img_array, fromCenter=False, showCrosshair=True)
-    cv2.destroyAllWindows()
-    return roi
 
 def main():
     st.title("Extraction de Tableaux avec Sélection des Zones")
@@ -40,13 +29,14 @@ def main():
             image = Image.open(uploaded_file)
             st.image(image, caption=f"Image {i + 1}", use_column_width=True)
 
-            # Convertir l'image PIL en tableau numpy pour OpenCV
-            img_array = np.array(image)
+            # Saisie manuelle des coordonnées de la zone
+            st.subheader("Sélectionnez les coordonnées de la zone à analyser")
+            x1 = st.number_input(f"X1 (coin supérieur gauche) pour l'image {i + 1}", min_value=0, max_value=image.width, value=0, key=f"x1_{i}")
+            y1 = st.number_input(f"Y1 (coin supérieur gauche) pour l'image {i + 1}", min_value=0, max_value=image.height, value=0, key=f"y1_{i}")
+            x2 = st.number_input(f"X2 (coin inférieur droit) pour l'image {i + 1}", min_value=0, max_value=image.width, value=image.width, key=f"x2_{i}")
+            y2 = st.number_input(f"Y2 (coin inférieur droit) pour l'image {i + 1}", min_value=0, max_value=image.height, value=image.height, key=f"y2_{i}")
 
-            # Permettre à l'utilisateur de sélectionner une zone
-            roi = select_roi(image)
-            if roi != (0, 0, 0, 0):
-                selected_zones.append(roi)
+            selected_zones.append((x1, y1, x2, y2))
 
         if validate_zones and selected_zones:
             # Barre de progression globale
@@ -63,9 +53,7 @@ def main():
                 image = Image.open(uploaded_file)
 
                 # Extraire les zones sélectionnées
-                roi = selected_zones[i]
-                x1, y1, width, height = roi
-                x2, y2 = x1 + width, y1 + height
+                x1, y1, x2, y2 = selected_zones[i]
 
                 # Rogner l'image selon la zone sélectionnée
                 cropped_image = image.crop((x1, y1, x2, y2))
