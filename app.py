@@ -1,31 +1,14 @@
 import streamlit as st
-import requests
 from PIL import Image
 import pandas as pd
 import io
+import easyocr
 
 def extract_text_from_image(image):
-    """Extraire le texte d'une image complète."""
-    api_url = "https://api.ocr.space/parse/image"
-    payload = {
-        'isOverlayRequired': False,
-        'apikey': 'helloworld',  # Clé API gratuite pour les tests
-        'language': 'fra',
-    }
-
-    img_byte_arr = io.BytesIO()
-    image.save(img_byte_arr, format='PNG')
-    img_byte_arr = img_byte_arr.getvalue()
-
-    files = {'file': img_byte_arr}
-    response = requests.post(api_url, files=files, data=payload)
-    result = response.json()
-
-    # Afficher la réponse complète de l'API pour le débogage
-    st.subheader("Réponse complète de l'API :")
-    st.json(result)
-
-    text = result.get('ParsedResults', [{}])[0].get('ParsedText', '')
+    """Extraire le texte d'une image complète avec EasyOCR."""
+    reader = easyocr.Reader(['fr'])  # Langue française
+    result = reader.readtext(image, detail=0)
+    text = '\n'.join(result)
     return text
 
 def clean_and_structure_data(text):
