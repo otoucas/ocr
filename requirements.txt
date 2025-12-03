@@ -4,3 +4,4 @@ pillow
 pytesseract
 requests
 streamlit
+streamlit-drawable-canvas
