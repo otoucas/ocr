@@ -9,7 +9,7 @@ def extract_text_from_image(image):
     api_url = "https://api.ocr.space/parse/image"
     payload = {
         'isOverlayRequired': False,
-        'apkeyp': 'helloworld',  # Clé API gratuite pour les tests
+        'apikey': 'VOTRE_CLE_API',  # Remplacez par votre clé API valide
         'language': 'fra',  # Utiliser 'fra' pour le français
     }
 
@@ -19,13 +19,23 @@ def extract_text_from_image(image):
 
     files = {'file': ('image.png', img_byte_arr, 'image/png')}
     response = requests.post(api_url, files=files, data=payload)
-    result = response.json()
+
+    try:
+        result = response.json()
+    except ValueError:
+        st.error("Erreur de réponse de l'API : " + response.text)
+        return ""
 
     # Afficher la réponse complète de l'API pour le débogage
     st.subheader("Réponse complète de l'API :")
     st.json(result)
 
-    text = result.get('ParsedResults', [{}])[0].get('ParsedText', '')
+    if 'ParsedResults' in result:
+        text = result.get('ParsedResults', [{}])[0].get('ParsedText', '')
+    else:
+        st.error("Erreur lors de l'extraction du texte : " + str(result))
+        text = ""
+
     return text
 
 def clean_and_structure_data(text):
@@ -54,7 +64,7 @@ def main():
     if uploaded_file is not None:
         # Afficher l'image
         image = Image.open(uploaded_file)
-        st.image(image, caption="Image téléversée", use_column_width=True)
+        st.image(image, caption="Image téléversée", use_container_width=True)
 
         # Extraire le texte de l'image
         st.write("Extraction du texte en cours...")
