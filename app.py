@@ -21,6 +21,10 @@ def extract_text_from_image(image):
     response = requests.post(api_url, files=files, data=payload)
     result = response.json()
 
+    # Afficher la réponse complète de l'API pour le débogage
+    st.subheader("Réponse complète de l'API :")
+    st.json(result)
+
     text = result.get('ParsedResults', [{}])[0].get('ParsedText', '')
     return text
 
